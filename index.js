@@ -18,62 +18,23 @@ const paths = [
   ['size', 'height'],
 ]
 
-// Each change is versioned, the fields themselves aren't versioned.
-// The fields just reference the uid of the change.
-const op = {
-  key: 'test',
-  version: [0, 'james'],
-  pathIndex: 0,
-  value: {
-    position: {
-      x: 0,
-      y: 0,
-    },
-    size: {
-      width: 0,
-      height: 0,
-    },
-  },
+const indices = {
+  '/': 0,
+  '/position': 1,
+  '/size': 2,
+  '/position.x': 3,
+  '/position.y': 4,
+  '/size.width': 5,
+  '/size.height': 6,
 }
 
-const op2 = {
-  key: 'test',
-  parentPathIndex: 0,
-  parentVersion: [0, 'james'],
-  version: [1, 'james'],
-  pathIndex: 1,
-  value: {
-    x: 50,
-    y: 50,
-  },
-}
-
-const op3 = {
-  key: 'test',
-  parentPathIndex: 0,
-  parentVersion: [0, 'james'],
-  version: [2, 'james'],
-  pathIndex: 1,
-  value: {
-    x: 150,
-    y: 75,
-  },
-}
-
-const op4 = {
-  key: 'test',
-  version: [3, 'james'],
-  pathIndex: 0,
-  value: {
-    position: {
-      x: 125,
-      y: 92,
-    },
-    size: {
-      width: 63,
-      height: 12,
-    },
-  },
+const parentIndices = {
+  '/position': 0,
+  '/size': 0,
+  '/position.x': 1,
+  '/position.y': 1,
+  '/size.width': 2,
+  '/size.height': 2,
 }
 
 const crdts = {}
@@ -166,25 +127,85 @@ const applyOp = (op) => {
   }
 }
 
-console.log('_CRDTS_', crdts)
-console.log('_DOCS_', documents)
+const createOp = (key, path, version, value) => {
+  const pathIndex = indices[path]
+
+  if (path === '/') {
+    return {
+      key,
+      version,
+      pathIndex,
+      value,
+    }
+  }
+
+  const parentPathIndex = parentIndices[path]
+  const parentVersion = crdts[key][parentPathIndex]
+
+  return {
+    key,
+    parentVersion,
+    parentPathIndex,
+    version,
+    pathIndex,
+    value,
+  }
+}
+
+const op = createOp(
+  '123abc',
+  '/',
+  [0, 'james'],
+  {
+    position: { x: 0, y: 0 },
+    size: { width: 100, height: 100 },
+  },
+)
 
 applyOp(op)
 
+console.log('_OP_', op)
 console.log('_CRDTS_', crdts)
-console.log('_DOCS_', documents)
+console.log('_DOCUMENTS_', documents)
+
+const op2 = createOp(
+  '123abc',
+  '/position',
+  [1, 'james'],
+  { x: 10, y: 10 },
+)
 
 applyOp(op2)
 
+console.log('_OP2_', op2)
 console.log('_CRDTS_', crdts)
-console.log('_DOCS_', documents)
+console.log('_DOCUMENTS_', documents)
+
+const op3 = createOp(
+  '123abc',
+  '/position.x',
+  [2, 'james'],
+  50,
+)
 
 applyOp(op3)
 
+console.log('_OP3_', op3)
 console.log('_CRDTS_', crdts)
-console.log('_DOCS_', documents)
+console.log('_DOCUMENTS_', documents)
+
+const op4 = createOp(
+  '123abc',
+  '/size',
+  [3, 'james'],
+  {
+    width: 200,
+    height: 50,
+  },
+)
 
 applyOp(op4)
 
+console.log('_OP4_', op4)
 console.log('_CRDTS_', crdts)
-console.log('_DOCS_', documents)
+console.log('_DOCUMENTS_', documents)
