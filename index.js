@@ -8,6 +8,16 @@ const childIndices = [
   [],
 ]
 
+const parentIndices = [
+  [],
+  [0],
+  [0],
+  [1, 0],
+  [1, 0],
+  [2, 0],
+  [2, 0],
+]
+
 const paths = [
   [],
   ['position'],
@@ -28,17 +38,34 @@ const indices = {
   '/size.height': 6,
 }
 
-const parentIndices = {
-  '/position': 0,
-  '/size': 0,
-  '/position.x': 1,
-  '/position.y': 1,
-  '/size.width': 2,
-  '/size.height': 2,
-}
-
 const crdts = {}
 const documents = {}
+
+const getParentPathIndex = (crdt, pathIndex) => {
+  const currentIndices = parentIndices[pathIndex]
+  for (let i = 0; i < currentIndices.length; i++) {
+    const parentPathIndex = currentIndices[i]
+    const version = crdt[currentIndices[i]]
+    if (version !== undefined) {
+      return parentPathIndex
+    }
+  }
+
+  return -1
+}
+
+const getIndicesBetween = (parentPathIndex, pathIndex) => {
+  const indices = []
+  const currentIndices = parentIndices[pathIndex]
+
+  for (let i = 0; i < currentIndices.length; i++) {
+    if (currentIndices[i] === parentPathIndex) {
+      return indices
+    }
+    indices.push(i)
+  }
+  return indices
+}
 
 const shouldReplace = ([seq, agentId], [seq2, agentId2]) =>
   seq2 > seq || (seq2 === seq && agentId2 > agentId)
@@ -113,8 +140,17 @@ const applyOp = (op) => {
         return true
       }
 
+      // need to check all parent indices between parentPathIndex and pathIndex
       if (!parentVersionMatches(crdt, parentPathIndex, parentVersion)) {
         return false
+      }
+
+      const indicesBetween = getIndicesBetween(parentPathIndex, pathIndex)
+      for (let i = 0; i < indicesBetween.length; i++) {
+        const index = indicesBetween[i]
+        if (crdt[index] !== undefined) {
+          return false
+        }
       }
 
       crdts[key][pathIndex] = deepCopy(version)
@@ -139,7 +175,12 @@ const createOp = (key, path, version, value) => {
     }
   }
 
-  const parentPathIndex = parentIndices[path]
+  const parentPathIndex = getParentPathIndex(crdts[key], pathIndex)
+
+  if (parentPathIndex === -1) {
+    throw new Error('Invalid operation')
+  }
+
   const parentVersion = crdts[key][parentPathIndex]
 
   return {
@@ -207,5 +248,21 @@ const op4 = createOp(
 applyOp(op4)
 
 console.log('_OP4_', op4)
+console.log('_CRDTS_', crdts)
+console.log('_DOCUMENTS_', documents)
+
+const op5 = createOp(
+  '123abc',
+  '/',
+  [4, 'james'],
+  {
+    position: { x: 75, y: 12 },
+    size: { width: 326, height: 263 },
+  },
+)
+
+applyOp(op5)
+
+console.log('_OP5_', op5)
 console.log('_CRDTS_', crdts)
 console.log('_DOCUMENTS_', documents)
