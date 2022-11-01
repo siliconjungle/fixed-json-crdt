@@ -19,7 +19,7 @@ export const getPrimitive = (value) => {
   }
 }
 
-const deepCopy = (obj) => JSON.parse(JSON.stringify(obj))
+export const deepCopy = (obj) => JSON.parse(JSON.stringify(obj))
 
 export const getPaths = (type, paths = [], path = []) => {
   let currentPrimitive = getPrimitive(type)
